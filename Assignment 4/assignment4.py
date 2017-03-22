@@ -1,5 +1,5 @@
-from PIL import Image
 from scipy import ndimage as ndi
+from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 from array import array
@@ -51,26 +51,35 @@ edges2 = edges(im, 3)
 
 # -------- Step 2 --------- #
 
-def houghTransform(img_bin, theta_res=1, rho_res=1):
-    nR, nC = img_bin.shape
-    theta = np.linspace(-90.0, 0.0, np.ceil(90.0/theta_res) + 1)
-    theta = np.concatenate((theta, -theta[len(theta)-2::-1]))
+def houghTransform(img):
 
-    D = np.sqrt((nR - 1)**2 + (nC - 1)**2)
-    q = np.ceil(D/rho_res)
-    nrho= 2*q + 1
-    rho = np.linspace(-1*rho_res, q*rho_res, nrho)
-    H = np.zeros((len(rho), len(theta)))
-    for rowIdx in range(nR):
-        print rowIdx
-        for colIdx in range(nC):
-            print colIdx
-            if img_bin[rowIdx, colIdx]:
-                for thIdx in range(len(theta)):
-                    rhoVal = colIdx*np.cos(theta[thIdx]*np.pi/180.0) +  rowIdx*np.sin(theta[thIdx]*np.pi/180)
-                    rhoIdx = np.nonzero(np.abs(rho-rhoVal) == np.min(np.abs(rho-rhoVal)))[0]
-                    H[rhoIdx[0], thIdx] += 1
-    return rho, theta, H
+    thetas = np.deg2rad(np.arange(-90.0, 90.0))
+    width, height = img.shape
+    diag_len = np.ceil(np.sqrt(width * width + height * height))
+    rhos = np.linspace(-diag_len, diag_len, diag_len * 2.0)
+
+    cos_t = np.cos(thetas)
+    sin_t = np.sin(thetas)
+    num_thetas = len(thetas)
+
+    accumulator = np.zeros((2 * diag_len, num_thetas), dtype=np.uint64)
+
+    print accumulator.shape
+    y_idxs, x_idxs = np.nonzero(img)
+    print len(y_idxs), len(x_idxs)
+
+    for i in range(len(x_idxs)):
+        print i
+        x = x_idxs[i]
+        y = y_idxs[i]
+
+        for t_idx in range(num_thetas):
+            rho = round(x * cos_t[t_idx] + y * sin_t[t_idx]) + diag_len
+            accumulator[rho, t_idx] += 1
+
+    return accumulator, thetas, rhos
+
+
 
 def prepareImage(arr):
     """ Returns array ready to be converted to Image """
@@ -78,7 +87,7 @@ def prepareImage(arr):
     arr_min = float(np.amin(arr))
     return np.uint8(((arr - arr_min) / (arr_max - arr_min)) * 255)
 
-rhos, thetas, H = houghTransform(edges2)
+H, thetas, rhos = houghTransform(edges2)
 
 print prepareImage(H)
 
