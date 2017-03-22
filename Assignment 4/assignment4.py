@@ -51,33 +51,24 @@ edges2 = edges(im, 3)
 
 # -------- Step 2 --------- #
 
-def houghTransform(img):
-
+def houghTransform(im):
     thetas = np.deg2rad(np.arange(-90.0, 90.0))
-    width, height = img.shape
-    diag_len = np.ceil(np.sqrt(width * width + height * height))
-    rhos = np.linspace(-diag_len, diag_len, diag_len * 2.0)
-
+    width, height = im.shape
+    d_len = np.ceil(np.sqrt(width * width + height * height))
+    rhos = np.linspace(-d_len, d_len, d_len * 2.0)
     cos_t = np.cos(thetas)
     sin_t = np.sin(thetas)
     num_thetas = len(thetas)
-
-    accumulator = np.zeros((2 * diag_len, num_thetas), dtype=np.uint64)
-
-    print accumulator.shape
-    y_idxs, x_idxs = np.nonzero(img)
-    print len(y_idxs), len(x_idxs)
-
-    for i in range(len(x_idxs)):
+    H = np.zeros((2 * d_len, num_thetas), dtype=np.uint64)
+    y_idx, x_idx = np.nonzero(im)
+    for i in range(len(x_idx)):
         print i
-        x = x_idxs[i]
-        y = y_idxs[i]
-
+        x = x_idx[i]
+        y = y_idx[i]
         for t_idx in range(num_thetas):
-            rho = round(x * cos_t[t_idx] + y * sin_t[t_idx]) + diag_len
-            accumulator[rho, t_idx] += 1
-
-    return accumulator, thetas, rhos
+            rho = round(x * cos_t[t_idx] + y * sin_t[t_idx]) + d_len
+            H[rho, t_idx] += 1
+    return H, thetas, rhos
 
 
 
@@ -89,8 +80,6 @@ def prepareImage(arr):
 
 H, thetas, rhos = houghTransform(edges2)
 
-print prepareImage(H)
-
 i = Image.fromarray(prepareImage(H))
-
+i.save("line_hough.jpg", "JPEG")
 i.show()
